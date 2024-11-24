@@ -1,0 +1,165 @@
+يمكنك إنشاء تطبيق ويب بسيط يلبي هذا الطلب باستخدام **Python** ولغة **HTML** مع إطار عمل مثل **Flask** لإدارة الواجهة والتفاعلات، وبدلاً من قاعدة بيانات معقدة، يمكن تخزين البيانات في ملف نصي `.txt`.  
+
+### **مقترحات لتنفيذ المشروع:**
+1. **واجهة المستخدم (Frontend):**  
+   - صفحة للموظفين لإدخال بياناتهم: الاسم، البريد الإلكتروني، الرقم، التقرير.  
+   - صفحة للمدير لعرض كل البيانات وتعديلها.  
+2. **Backend (Python):**  
+   - استخدام Flask لمعالجة الإدخال وتحديث البيانات.  
+   - تخزين البيانات في ملف `.txt` بتنسيق مناسب (JSON أو CSV).
+3. **التوسعات المستقبلية:**  
+   - إضافة ميزة تسجيل الدخول باستخدام كلمات المرور.  
+   - تحسين عرض البيانات باستخدام مكتبة مثل **Bootstrap**.  
+   - الانتقال إلى قاعدة بيانات مثل SQLite أو MySQL إذا تطلب الأمر.
+
+---
+
+### **الكود الكامل:**
+#### **1. إنشاء ملف Flask (app.py):**
+```python
+from flask import Flask, render_template, request, redirect
+
+app = Flask(__name__)
+
+# ملف لتخزين البيانات
+DATA_FILE = "employees.txt"
+
+# قراءة البيانات من الملف
+def read_data():
+    try:
+        with open(DATA_FILE, "r") as file:
+            data = [eval(line.strip()) for line in file]
+        return data
+    except FileNotFoundError:
+        return []
+
+# كتابة البيانات إلى الملف
+def write_data(data):
+    with open(DATA_FILE, "w") as file:
+        for entry in data:
+            file.write(str(entry) + "\n")
+
+# الصفحة الرئيسية للموظفين
+@app.route("/", methods=["GET", "POST"])
+def employee_form():
+    if request.method == "POST":
+        name = request.form["name"]
+        email = request.form["email"]
+        phone = request.form["phone"]
+        status = request.form["status"]
+
+        # إضافة البيانات إلى الملف
+        data = read_data()
+        data.append({"name": name, "email": email, "phone": phone, "status": status})
+        write_data(data)
+
+        return redirect("/")
+    return render_template("employee_form.html")
+
+# صفحة المدير
+@app.route("/admin", methods=["GET", "POST"])
+def admin_panel():
+    data = read_data()
+    if request.method == "POST":
+        # تعديل البيانات بناءً على الطلب
+        index = int(request.form["index"])
+        data[index]["status"] = request.form["status"]
+        write_data(data)
+        return redirect("/admin")
+    return render_template("admin_panel.html", employees=data)
+
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+---
+
+#### **2. صفحة إدخال الموظف (templates/employee_form.html):**
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Form</title>
+</head>
+<body>
+    <h1>إدخال بيانات الموظف</h1>
+    <form method="POST">
+        <label>الاسم:</label><br>
+        <input type="text" name="name" required><br>
+        <label>الإيميل:</label><br>
+        <input type="email" name="email" required><br>
+        <label>رقم الهاتف:</label><br>
+        <input type="text" name="phone" required><br>
+        <label>التقرير/الحالة:</label><br>
+        <textarea name="status" required></textarea><br>
+        <button type="submit">إرسال</button>
+    </form>
+</body>
+</html>
+```
+
+---
+
+#### **3. صفحة المدير (templates/admin_panel.html):**
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+</head>
+<body>
+    <h1>لوحة المدير</h1>
+    <table border="1">
+        <tr>
+            <th>#</th>
+            <th>الاسم</th>
+            <th>الإيميل</th>
+            <th>رقم الهاتف</th>
+            <th>التقرير/الحالة</th>
+            <th>إجراء</th>
+        </tr>
+        {% for i, employee in enumerate(employees) %}
+        <tr>
+            <td>{{ i+1 }}</td>
+            <td>{{ employee.name }}</td>
+            <td>{{ employee.email }}</td>
+            <td>{{ employee.phone }}</td>
+            <td>
+                <form method="POST">
+                    <input type="hidden" name="index" value="{{ i }}">
+                    <input type="text" name="status" value="{{ employee.status }}">
+                    <button type="submit">تعديل</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
+```
+
+---
+
+### **تشغيل التطبيق:**
+1. احفظ الكود في ملف `app.py`.  
+2. أنشئ مجلدًا باسم `templates` وضع داخله ملفات HTML.  
+3. شغل التطبيق باستخدام الأمر:  
+   ```bash
+   python app.py
+   ```
+4. افتح المتصفح وانتقل إلى:  
+   - صفحة الموظفين: `http://127.0.0.1:5000/`  
+   - صفحة المدير: `http://127.0.0.1:5000/admin`
+
+---
+
+### **مزايا المشروع:**
+- **سهولة التنفيذ:** يتم استخدام ملف `.txt` لتخزين البيانات.  
+- **قابلية التوسع:** يمكنك بسهولة ترقية المشروع لاستخدام قواعد بيانات أكثر تطورًا.  
+- **سهولة الانتشار:** يمكن مشاركة رابط التطبيق مع الموظفين بسهولة.  
+
+إذا كنت بحاجة إلى مزيد من الميزات أو شرح أعمق، سأكون سعيدًا بمساعدتك!
